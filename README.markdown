@@ -29,4 +29,7 @@ Please refer to app/todo/models/todo.js for model settings. That should be all y
  
 * Backbone.Store.ClearFromCache(model or collection, relatives)  - to remove the cached data. Setting relatives to true will destroy the related model or collection,
 * Backbone.Store.nuke() - to clear the entire storage cache - good for testing.
-	
+
+# Dependencies
+Require.js (or modify to not use AMD module loading), Lawnchair.js, Underscore.js, Backbone.js, backbone.store.js
+All dependencies are included in the project.
