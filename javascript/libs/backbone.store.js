@@ -30,11 +30,11 @@ Backbone.Store = Lawnchair(function(){});
 _.extend(Backbone.Store, {
   // Save the current state of the **Store** to *localStorage*.
   saveData: function(model, data) {
-      console.log('data',data)
+     
      if(model.id){
          model.lawnchair.key = model.lawnchair.key + '-' + model.id;
      }
-     console.log('lwncahir',model.lawnchair)
+     
   	 //again, check to see if we are using a server - we don't want to create empty lawnchairs if we are using a server without checking the server first
   	 if(!model.lawnchair.server){
   	 	if(!data) var data = {};
@@ -55,6 +55,7 @@ _.extend(Backbone.Store, {
          if(json.hasOwnProperty('fromCollection')){
              delete json.fromCollection;
          }
+         model.lawnchair.isComplete = true;
      }
      if(model.lawnchair.isComplete) json.isComplete = model.lawnchair.isComplete; //use this to specify if original stored model has complete detail data
      json.id = model.id;
@@ -255,10 +256,11 @@ _.extend(Backbone.Store, {
   	 });
   },
   destroy: function(method,model,options) {
+    var self = this;
     if(model.lawnchair.server){
         //need to delete from the server, then remove from stored collection
-         options.success = function(model){
-            this.removeFromStore(model);
+         options.success = function(resp){
+            self.removeFromStore(model);
          } 
          Backbone.RESTfulsync(method,model,options);
     }else{

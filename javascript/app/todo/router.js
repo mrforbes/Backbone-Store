@@ -12,7 +12,7 @@ define('app/todo/router',[
 	exports = {},
 	Todo = {};
 	
-	//Backbone.Store.nuke(); //reset the cache
+	Backbone.Store.nuke(); //reset the cache
 	
 	/** gather each view **/
 	_.extend(Todo, list);
@@ -54,7 +54,7 @@ define('app/todo/router',[
 	exports.execute = function(){
 		new Todo.Router();
 		//start the history module
-		Backbone.history.start({pushState:true,root:'/index.html'});
+		Backbone.history.start({pushState:true});
 	}
 
 	

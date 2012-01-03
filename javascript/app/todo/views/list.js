@@ -45,13 +45,13 @@ define('app/todo/views/list',['underscore','jquery','backbone.store','../models/
            $(this.el).find('.todo-list').show();
        },
        addTodo: function(e){  //occurs on click of add button
-           this.model = new model.Item; // instantiating a model to hold the item we are adding
-           this.model.bind('save',this.addToCollection,this); //binding the save event so whatever we add gets placed in the collection
+           var todoItem = new model.Item; // instantiating a model to hold the item we are adding
+           todoItem.bind('save',this.addToCollection,this); //binding the save event so whatever we add gets placed in the collection
            var self = $(e.currentTarget); // this is how we reference the event element, since 'this' is always bound to the view
            var input = self.prev(); // jquery, the input is right before the button
            var key = input.attr('id'); // don't really need this
            var value = input.val(); //get the value of the input
-           this.model.save({'todo':value}); //save the model - this will make a restful call to the server if lawnchair.server is true, otherwise it will just get added to localstorage.
+           todoItem.save({'todo':value}); //save the model - this will make a restful call to the server if lawnchair.server is true, otherwise it will just get added to localstorage.
        },
        addAll: function(){ //this is used if the collection is bootstrapped into the page 
            this.collection.each(this.addOne)
