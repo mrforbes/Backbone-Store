@@ -75,10 +75,15 @@ _.extend(Backbone.Store, {
      
      //if using a server, push the new object up, don't add to store unless successfull
      if(model.lawnchair.server){
-         options.success = function(model,resp){
-            if(resp[0].hasOwnProperty(model.idAttribute)){
-                // set the model id here
+         options.success = function(resp){
+         	
+            if(resp[0][model.idAttribute]){
+                // set the model id her
+                
                 model.id = resp[0][model.idAttribute];
+                var modelatt = {};
+                modelatt[model.idAttribute] = model.id;
+                model.set(modelatt);
             }    
             self.addToStore(model);
          } 
