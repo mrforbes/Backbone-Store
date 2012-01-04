@@ -37,6 +37,7 @@ class Todo_model extends CI_Model {
     
     public function update($id, $fields){
         $query =  $this->db->update('todos',$fields,array('id'=>$id));
+        return $query;
     }
     
     public function set($fields){

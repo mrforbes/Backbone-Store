@@ -44,35 +44,35 @@ class Todo_api extends REST_Controller
   
         if(sizeof($result)===0)  
         {  
-            $this->response(array('status' => 'failed'));  
+            $this->response(array('status' => 'failed'), 400);  
         }  
   
         else  
         {  
-            $this->response(array(array('id' => $result)));  
+            $this->response(array(array('id' => $result)),200);  
         }  
   
     }
     
     function todo_put(){
         $this->load->model('todo_model');
-        $result = $this->todo_model->set( $this->put('id'), array(  
-            'todo' => $this->put('todo')  
-        ));  
-  
-        if($result === FALSE)  
-        {  
-            $this->response(array('status' => 'failed'));  
-        }  
-  
-        else  
-        {  
-            $this->response(array('status' => 'success'));  
-        }  
+        $id = $this->put('id');
+        $update['note'] = $this->put('note');
+        $update['todo'] = $this->put('todo');
+        
+        $result = $this->todo_model->update($id,$update);
+        
+        if($result == 1){
+             $this->response(array('status' => 'success'), 200);  
+        }
+        else{
+            $this->response(array('status' => 'failed'), 400); 
+        }
     }
     
     function todo_delete()
     {
+        
          $this->load->model('todo_model');
     	$result = $this->todo_model->delete( $this->delete('id'), array(  
             'todo' => $this->delete('todo')  
@@ -80,12 +80,12 @@ class Todo_api extends REST_Controller
   
         if($result === FALSE)  
         {  
-            $this->response(array('status' => 'failed'));  
+            $this->response(array('status' => 'failed'),400);  
         }  
   
         else  
         {  
-            $this->response(array('status' => 'success'));  
+            $this->response(array('status' => 'success'),200);  
         }  
     }
     

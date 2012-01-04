@@ -24,7 +24,7 @@ define('app/todo/views/list',['underscore','jquery','backbone.store','../models/
          _.bindAll(this,'addAll','addOne','addTodo','addToCollection','show','subscribers'); //all functions inside the view should be bound here... a weirdness of backbone.
          //create/merge settings
          this.settings = {};
-         $.extend(this.settings, this.defaultOptions, options);
+         _.extend(this.settings, this.defaultOptions, options);
          // parse the template html to make it a real template
          this.template = _.template(template);
          this.render(); // add the template to the container

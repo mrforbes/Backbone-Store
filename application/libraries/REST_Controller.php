@@ -85,8 +85,15 @@ class REST_Controller extends CI_Controller {
 				break;
 
 			case 'put':
+                
+                //see if its json
+                $args = get_object_vars(json_decode(file_get_contents('php://input')));
+            
+                if(!empty($args)){
+                    $this->_put_args = $args;
+                } 
 				// It might be a HTTP body
-				if ($this->request->format)
+                else if ($this->request->format)
 				{
 					$this->request->body = file_get_contents('php://input');
 				}
@@ -102,6 +109,21 @@ class REST_Controller extends CI_Controller {
 			case 'delete':
 				// Set up out DELETE variables (which shouldn't really exist, but sssh!)
 				parse_str(file_get_contents('php://input'), $this->_delete_args);
+                if(empty($this->_delete_args)){
+                    $segments = $this->uri->total_segments();
+                    $value = $this->uri->segment($segments);
+                    $key = $this->uri->segment($segments-1);
+                    $uri_array = $this->uri->uri_to_assoc();
+                    if(array_key_exists('format', $uri_array)){
+                       
+                        $value = $this->uri->segment($segments - 2);
+                        $key = $this->uri->segment($segments-3);
+                    }
+                    
+                    
+                    $this->_delete_args[$key] = $value;
+                    
+                }
 				break;
 		}
 
@@ -663,6 +685,7 @@ class REST_Controller extends CI_Controller {
 
 	public function put($key = NULL, $xss_clean = TRUE)
 	{
+	    
 		if ($key === NULL)
 		{
 			return $this->_put_args;

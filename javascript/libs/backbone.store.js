@@ -28,42 +28,32 @@ function checkExpired(lawnchair, timestamp){
 Backbone.Store = Lawnchair(function(){});   
    
 _.extend(Backbone.Store, {
-  // Save the current state of the **Store** to *localStorage*.
-  saveData: function(model, data) {
-     
-     if(model.id){
-         model.lawnchair.key = model.lawnchair.key + '-' + model.id;
-     }
-     
-  	 //again, check to see if we are using a server - we don't want to create empty lawnchairs if we are using a server without checking the server first
-  	 if(!model.lawnchair.server){
-  	 	if(!data) var data = {};
-    	this.save({key:model.lawnchair.key,records:data});
-     }
-     else
-     {
-     	var now = +new Date(); //add a timestamp so we can expire the storage later
-     	this.save({key:model.lawnchair.key,records:data,timestamp:now});
-     }
-  },
-  
+// save the model to lawnchair
   saveModel: function(model, fromCollection){
-     if(!model.id) model.id = guid();
      var json = model.toJSON();
+     if(json[model.idAttribute]){
+         model.id = json[model.idAttribute];
+     }
+     else if(!model.id){
+         model.id = guid();
+     } 
      if(fromCollection) json.fromCollection = true;
      else{
          if(json.hasOwnProperty('fromCollection')){
              delete json.fromCollection;
          }
-         model.lawnchair.isComplete = true;
+         json.isComplete = true;
      }
-     if(model.lawnchair.isComplete) json.isComplete = model.lawnchair.isComplete; //use this to specify if original stored model has complete detail data
+     if(model.lawnchair.isComplete) {
+         json.isComplete = model.lawnchair.isComplete; //use this to specify if original stored model has complete detail data
+     }
      json.id = model.id;
      json.key = model.lawnchair.key + '-' + model.id;
      json.timestamp = +new Date();
-    
+  
      this.save(json);  
   },
+  //save the collection to lawnchair, this is just a reference to the stored models.
   saveCollection: function(key, ids){
      this.save({key:key,models:ids,timestamp:+new Date()}); 
   },
@@ -133,10 +123,12 @@ _.extend(Backbone.Store, {
        	 	success = options.success;
        	 }
        	 
-       	 options.success = function(model,resp){
+       	 options.success = function(resp){  
        	 	self.saveModel(model);
        	 	if(success) success();
        	 }
+       	 
+       	 Backbone.RESTfulsync(method,model,options);
        	 
        }
        else {
@@ -153,19 +145,13 @@ _.extend(Backbone.Store, {
         var loadFromServer = false;
         var thisData = {};
       
-       
-        if(!model.lawnchair.isComplete && model.lawnchair.server){
-            // we don't have a complete dataset, so lets get the detail from the server
-            loadFromServer = true;
-        }
-        else{
-           
+   
             this.get(key,function(data){
             	
                 if(!model.lawnchair.server){  //not using server, doesnt matter
                     thisData = data;
                 }
-                else if((!data || data.fromCollection) && model.lawnchair.server){
+                else if((!data || data.fromCollection || !data.isComplete) && model.lawnchair.server){
                     //we have data, and it is complete (fromCollection flag has been removed)
                     loadFromServer = true;
                 }
@@ -180,14 +166,20 @@ _.extend(Backbone.Store, {
                 } 
                 
             });
-        }
+        
        // console.log(thisData, data)
         if(loadFromServer){
             if(options.success) success = options.success;
                    options.success = function(data){
-                      model.set(data[0]);
-                      self.saveModel(model, false);  
-                      if(success) success(model);  
+                       var record = data[0];
+                       if(data[model.idAttribute]){
+                           record = data;
+                       }
+                      _.each(record,function(row){
+                          model.set(row);
+                          self.saveModel(model, false);  
+                          if(success) success(model);  
+                      });
                     }
             return Backbone.RESTfulsync(method, model, options);
         }

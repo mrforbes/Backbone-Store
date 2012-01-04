@@ -21,6 +21,11 @@ class Todo extends CI_Controller {
 	{
 		$this->load->view('todo');
 	}
+    
+    public function detail()
+    {
+        $this->load->view('todo');
+    }
 }
 
 /* End of file welcome.php */

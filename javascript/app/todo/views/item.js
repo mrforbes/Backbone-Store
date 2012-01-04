@@ -29,7 +29,7 @@ define('app/todo/views/item',['underscore','jquery','backbone.store','text!../te
           e.preventDefault();
           var self = $(e.currentTarget);
           var id = self.attr('href').replace(/#/,'');
-          if(this.settings.router) this.settings.router.navigate('/detail/'+id);
+          if(this.settings.router) this.settings.router.navigate('detail/'+id);
           
           this.loadDetail();
           
@@ -37,6 +37,7 @@ define('app/todo/views/item',['underscore','jquery','backbone.store','text!../te
        //create and render the new detail view
        loadDetail: function(){
        	  var detail = new Todo.Detail({model:this.model, router:this.settings.router, rootEl: this.settings.rootEl});
+       	  detail.preRender();
        	  detail.render();
        },
        removeOne: function(e){

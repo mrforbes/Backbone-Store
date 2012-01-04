@@ -16,7 +16,7 @@ define('app/todo/views/detail',['underscore','jquery','backbone.store','../model
        },
        initialize: function(options){
        	this.settings = {};
-         _.bindAll(this,'render','show','hide','editOne','removeOne','update','remove');
+         _.bindAll(this,'render','show','hide','editOne','removeOne','preRender','remove');
          // parse the template html to make it a real template
          _.extend(this.settings, options);
          this.template = _.template(template);
@@ -28,19 +28,20 @@ define('app/todo/views/detail',['underscore','jquery','backbone.store','../model
          this.delegateEvents();
          
        },
-       render: function(){
-       	 //pass along the root element to act on
-         $(this.settings.rootEl).find('.todo-list').fadeOut();
+       preRender: function(){
+       	 
          // get the model date and then go on to the show event
-          this.model.bind("change",this.update);
+          this.model.bind("change",this.render);
           this.model.bind("destroy",this.remove);
-          this.model.fetch({success:this.show});
+          this.model.fetch();
          // this.show();  
        },
-       update: function(){
+       render: function(){
        	 $(this.el).empty().append(this.template(this.model.toJSON()));
+       	 this.show();
        },
        show:function(){
+         $(this.settings.rootEl).find('.todo-list').fadeOut();  
        //if the record hasn't been rendered yet add it to the page.
          if($("#todo-"+this.model.id).length === 0){
              $(this.settings.rootEl).append(this.el)

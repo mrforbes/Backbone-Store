@@ -12,7 +12,7 @@ define('app/todo/router',[
 	exports = {},
 	Todo = {};
 	
-	Backbone.Store.nuke(); //reset the cache
+//	Backbone.Store.nuke(); //reset the cache
 	
 	/** gather each view **/
 	_.extend(Todo, list);
@@ -32,14 +32,14 @@ define('app/todo/router',[
 	  //add your paths here
 	  routes: {
 	    "": "home",    // #help
-	    "/detail/:id": "detail"
+	    "detail/:id": "detail"
 	  },
 	  all: function(){
 	  	
 	  },
 	  detail: function(id){
 	    var urlDetail = new Todo.Detail({collection:collection, model:model,router:this,id:id,rootEl:$("#todo-container")});
-	    urlDetail.render();
+	    urlDetail.preRender();
 	  },
 	  home: function() {
 	    // this is equivalent to '/'
@@ -54,7 +54,7 @@ define('app/todo/router',[
 	exports.execute = function(){
 		new Todo.Router();
 		//start the history module
-		Backbone.history.start({pushState:true});
+		Backbone.history.start({pushState:true, root:'/todo/'});
 	}
 
 	
