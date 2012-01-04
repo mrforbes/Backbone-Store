@@ -69,9 +69,19 @@ class REST_Controller extends CI_Controller {
 				break;
 
 			case 'post':
-				$this->_post_args = $_POST;
-        
-				$this->request->format and $this->request->body = file_get_contents('php://input');
+				
+
+				if(!empty($_POST)) {
+					$this->_post_args = $_POST;
+					
+				}
+				else {
+					$this->_post_args =  get_object_vars(json_decode(file_get_contents('php://input')));
+					
+					
+				}
+        		$this->request->format and $this->request->body = file_get_contents('php://input');
+				
 				break;
 
 			case 'put':
@@ -642,6 +652,7 @@ class REST_Controller extends CI_Controller {
 
 	public function post($key = NULL, $xss_clean = TRUE)
 	{
+		
 		if ($key === NULL)
 		{
 			return $this->_post_args;

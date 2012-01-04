@@ -40,13 +40,13 @@ class Todo_model extends CI_Model {
     }
     
     public function set($fields){
-        print_r($fields);
-       // $query =  $this->db->insert('todos',$fields);
-        print_r($query);
+     //   print_r($fields);
+        $query =  $this->db->insert('todos',$fields);
+        return $this->db->insert_id();
+		
     }
     
     
 }
 
 ?>
-    

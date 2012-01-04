@@ -39,8 +39,8 @@ class Todo_api extends REST_Controller
     {
         $this->load->model('todo_model');
       
-        $fields['todo'] = $this->post('todo');
-        $result = $this->todo_model->set($fields);
+        
+        $result = $this->todo_model->set($this->post());
   
         if(sizeof($result)===0)  
         {  
