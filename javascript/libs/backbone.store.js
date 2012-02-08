@@ -1,7 +1,9 @@
 /*
  * Backbone.Store
+ * @author: michael forbes
+ * @version: .02
  */
-define('backbone.store',['underscore','backbone','libs/lawnchair'],function(_,Backbone,Lawnchair){
+define('backbonestore',['underscore','backbone','libs/lawnchair'],function(_,Backbone,Lawnchair){
     
 
 function S4() {
@@ -29,7 +31,8 @@ Backbone.Store = Lawnchair(function(){});
    
 _.extend(Backbone.Store, {
 // save the model to lawnchair
-  saveModel: function(model, fromCollection){
+  saveModel: function(settings,model, fromCollection){
+    
      var json = model.toJSON();
      if(json[model.idAttribute]){
          model.id = json[model.idAttribute];
@@ -44,11 +47,11 @@ _.extend(Backbone.Store, {
          }
          json.isComplete = true;
      }
-     if(model.lawnchair.isComplete) {
-         json.isComplete = model.lawnchair.isComplete; //use this to specify if original stored model has complete detail data
+     if(settings.isComplete) {
+         json.isComplete = settings.isComplete; //use this to specify if original stored model has complete detail data
      }
      json.id = model.id;
-     json.key = model.lawnchair.key + '-' + model.id;
+     json.key = settings.key + '-' + model.id;
      json.timestamp = +new Date();
   
      this.save(json);  
@@ -64,9 +67,9 @@ _.extend(Backbone.Store, {
      var self = this;
      
      //if using a server, push the new object up, don't add to store unless successfull
-     if(model.lawnchair.server){
+     if(model.store.server){
          options.success = function(resp){
-         	
+            
             if(resp[0][model.idAttribute]){
                 // set the model id her
                 
@@ -91,7 +94,7 @@ _.extend(Backbone.Store, {
      var ids = [];
     
      //get the list of associated stored models
-     this.get(model.lawnchair.key,function(data){
+     this.get(model.store.key,function(data){
          if(data){
            ids = ids.concat(data.models);   
          }
@@ -103,7 +106,7 @@ _.extend(Backbone.Store, {
       }
       this.saveModel(model);
       ids.push(model.id);
-      this.saveCollection(model.lawnchair.key,ids);
+      this.saveCollection(model.store.key,ids);
      
       model.trigger('save');
   },
@@ -112,27 +115,27 @@ _.extend(Backbone.Store, {
   update: function(method,model,options) {
       
        //need to update the stored version of the model, and send it to the server
-       var key = model.lawnchair.key + '-' + model.id;
+       var key = model.store.key + '-' + model.id;
        var self = this,
        success = null;
        
        
-       if(model.lawnchair.server){
-       	 //save it back to the server
-       	 if(options.success){
-       	 	success = options.success;
-       	 }
-       	 
-       	 options.success = function(resp){  
-       	 	self.saveModel(model);
-       	 	if(success) success();
-       	 }
-       	 
-       	 Backbone.RESTfulsync(method,model,options);
-       	 
+       if(model.store.server){
+         //save it back to the server
+         if(options.success){
+            success = options.success;
+         }
+         
+         options.success = function(resp){  
+            self.saveModel(model);
+            if(success) success();
+         }
+         
+         Backbone.RESTfulsync(method,model,options);
+         
        }
        else {
-       	 self.saveModel(model);
+         self.saveModel(model);
        }
   },
 
@@ -140,23 +143,23 @@ _.extend(Backbone.Store, {
   find: function(method,model,options) {
       
         var self = this;
-        var key = model.lawnchair.key+'-'+model.id;
+        var key = model.store.key+'-'+model.id;
         var success = null;
         var loadFromServer = false;
         var thisData = {};
       
    
             this.get(key,function(data){
-            	
-                if(!model.lawnchair.server){  //not using server, doesnt matter
+                
+                if(!model.store.server){  //not using server, doesnt matter
                     thisData = data;
                 }
-                else if((!data || data.fromCollection || !data.isComplete) && model.lawnchair.server){
+                else if((!data || data.fromCollection || !data.isComplete) && model.store.server){
                     //we have data, and it is complete (fromCollection flag has been removed)
                     loadFromServer = true;
                 }
                 else{
-                    var expired = checkExpired(model.lawnchair, data.timestamp);
+                    var expired = checkExpired(model.store, data.timestamp);
                     if(expired){
                         loadFromServer = true;
                     }
@@ -196,65 +199,68 @@ _.extend(Backbone.Store, {
             self = this;
         _.each(model.models,function(row){
                           ids.push(row.id);
-                          self.saveModel(row, true);
+                          self.saveModel(model.store,row, true);
                       });
                       
-        self.saveCollection(model.lawnchair.key,ids);     
+        self.saveCollection(model.store.key,ids);     
   },
   // Return the array of all models currently in storage.
   findAll: function(model,options) {
 
-  	if(model.url.match(/http/)!==null){
+    if(typeof model.url === 'String' && model.url.match(/http/)!==null){
             options.dataType = 'jsonp';
     }
-  	var self = this;
-  	self.get(model.lawnchair.key,function(data){
-  	
-  	 	//tried to get the data, but it came back null. if we are using a server, we need to get the data from there. otherwise we will create an empty key
-  	 	if(!data){
-  	 		if(model.lawnchair.server){
-  	 		     
-  	 		    options.success = function(data){
+    var self = this;
+    self.get(model.store.key,function(data){
+        var success = options.success
+        //tried to get the data, but it came back null. if we are using a server, we need to get the data from there. otherwise we will create an empty key
+        if(!data){
+            if(model.store.server){     
+                 
+                options.success = function(resp, status, xhr){
+                      success(resp, status, xhr);
                       var ids = [];
-                      _.each(data[0],function(row){
+                      if(_.isArray(resp)) resp = resp[0];
+                      _.each(resp,function(row){
                           model.add(row);
                       });
                       
                       self.saveModelsAndCollections(model); 
                 }
+                
                 return Backbone.RESTfulsync('read', model, options);  //this does the original ajax call as if there was no local storage
-                		
-  	 		}
-  	 		else{
-  	 		    //not using a server, make sure collection exists.
-  	 		    self.saveModelsAndCollections(model); 
-  	 		}
-  	 	}
-  	 	else{
-  	 		var expired = checkExpired(model.lawnchair, data.timestamp)
+                        
+            }
+            else{
+                //not using a server, make sure collection exists.
+                self.saveModelsAndCollections(model); 
+            }
+        }
+        else{
+            var expired = checkExpired(model.store, data.timestamp)
             if(expired){
-				this.remove(model.lawnchair.key);	       			
-				this.findAll(model, options);
-			} 
-			else
-			{
-  	 			//make sure the collection is fresh
-  	 			model.reset();
-  	 			//here we need to get all of the saved models and put them in the collection
-  	 			
-				 _.each(data.models,function(id){
-                          self.get(model.lawnchair.key + '-' + id, function(data){
+                this.remove(model.store.key);                   
+                this.findAll(model, options);
+            } 
+            else
+            {
+                //make sure the collection is fresh
+                model.reset();
+                //here we need to get all of the saved models and put them in the collection
+                
+                 _.each(data.models,function(id){
+                          self.get(model.store.key + '-' + id, function(data){
                               if(data) model.add(data)
                           })
                 });
-				
-			}
-  	 	}
-  	 });
+                
+            }
+        }
+     });
   },
   destroy: function(method,model,options) {
     var self = this;
-    if(model.lawnchair.server){
+    if(model.store.server){
         //need to delete from the server, then remove from stored collection
          options.success = function(resp){
             self.removeFromStore(model);
@@ -268,15 +274,15 @@ _.extend(Backbone.Store, {
   removeFromStore: function(model,noremove){
         var self = this;
         var ids = [];
-        var key = model.lawnchair.key + '-' + model.id;
+        var key = model.store.key + '-' + model.id;
         this.remove(key);
         
-        this.get(model.lawnchair.key,function(data){
+        this.get(model.store.key,function(data){
             var index = data.models.indexOf(model.id);
             data.models.splice(index,1);
             ids = data.models;
         });
-        this.saveCollection(model.lawnchair.key,ids);
+        this.saveCollection(model.store.key,ids);
         
         if(!noremove) {
                model.trigger('destroy');
@@ -287,20 +293,20 @@ _.extend(Backbone.Store, {
       //this is a backbone.store call that will clear the cached copy of the data. can be used to prevent overflowing memory limits, etc...  set relatives to true to reset any related stores (shared key)
       // usage:  Backbone.Store.clearFromCache({stored model or collection});
       // this does not remove individual models from a stored collection.
-      var key = model.lawnchair.key
+      var key = model.store.key
       if(model.id){
           //this is not a collection, add the id
           key = key + '-'+ model.id   
           
           if(relatives){  //this would be a collection
-             this.remove(model.lawnchair.key)
+             this.remove(model.store.key)
           }
           
       }
       else{
-           this.remove(model.lawnchair.key)
+           this.remove(model.store.key)
            if(relatives){
-               this.remove(model.lawnchair.key+'-'+model.id)
+               this.remove(model.store.key+'-'+model.id)
            }
       }
       this.remove(key);
@@ -312,6 +318,8 @@ _.extend(Backbone.Store, {
   }
 
 });
+
+
 
 Backbone.RESTfulsync = Backbone.sync
 
@@ -329,19 +337,19 @@ Backbone.sync = function(method, model, options, error) {
 
   
  
-  if(model.lawnchair) { 	
+  if(model.store) {     
     var chair = Backbone.Store;
-   
-	  switch (method) {
-	    case "read":    resp = model.id ? chair.find(method,model, options) : chair.findAll(model,options); break;
-	    case "create":  resp = chair.create(method,model,options);                            break;
-	    case "update":  resp = chair.update(method, model, options);                            break;
-	    case "delete":  resp = chair.destroy(method,model,options);                           break;
-	  }
+    
+      switch (method) {
+        case "read":    resp = model.id ? chair.find(method,model, options) : chair.findAll(model,options); break;
+        case "create":  resp = chair.create(method,model,options);                            break;
+        case "update":  resp = chair.update(method, model, options);                            break;
+        case "delete":  resp = chair.destroy(method,model,options);                           break;
+      }
   
   }
   else{
-  	Backbone.RESTfulsync(method,model,options,error)
+    Backbone.RESTfulsync(method,model,options,error)
   }
 
 
@@ -353,34 +361,40 @@ Backbone.sync = function(method, model, options, error) {
   }
 };
 
-_.extend(Backbone,{
-	savestate: function(key, value){
-		//key is the component name
-		//value is a hash of state information
-		
-		Backbone.Store.save({key:key,value:value},function(obj){
-			
-		})
-	},
-	loadstate: function(key){
-		var response = null
-		Backbone.Store.get(key, function(data){
-			//console.log(response)
-			if(data!=null) response = data.value
-		});
-		
-		return response
-	},
-	destroystate: function(key){
-		var response = null
-		Backbone.Store.destroy(key, function(data){
-			response = true
-		});
-		
-		return response
-	}
+_.extend(Backbone.Store,{
+    saveState: function(key, value, ttl){
+        //key is the component name
+        //value is a hash of state information
+        
+        this.save({key:key,data:{value:value,ttl:ttl,timestamp:+new Date()}},function(obj){
+            
+        })
+    },
+    loadState: function(key){
+        var response = null;
+        
+        this.get(key, function(data){
+            
+             if(data===null) return null;
+             
+             var now = +new Date();
+             var diff = Math.abs(data.timestamp - now) / 1000;
+             if(diff > data.ttl && data.ttl > 0) this.destroystate(key);
+             else if(data!=null) response = data.data.value;
+        });
+        
+        return response
+    },
+    destroyState: function(key){
+        var response = null
+        this.destroy(key, function(data){
+            response = true
+        });
+        
+        return response
+    }
 })
-	
-	
-	return Backbone;
+    
+    
+    return Backbone;
 })

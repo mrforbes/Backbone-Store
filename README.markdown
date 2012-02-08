@@ -45,4 +45,10 @@ You will need:
 
 * In order to make this work on your specific system, you will need to create your database, import the included application/setup/todo.sql file, and change your database configuration settings in application/config/database.php
 
+# Updates
 
+V 0.2:
+
+* Fixed bug to allow use of collection parsing
+* Changed model property name to 'store' instead of 'lawnchair' for naming consistency
+* Added non-model based peristent state
