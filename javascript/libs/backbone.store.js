@@ -1,7 +1,5 @@
 /*
  * Backbone.Store
- * @author: michael forbes
- * @version: .02
  */
 define('backbonestore',['underscore','backbone','libs/lawnchair'],function(_,Backbone,Lawnchair){
     
@@ -206,19 +204,21 @@ _.extend(Backbone.Store, {
   },
   // Return the array of all models currently in storage.
   findAll: function(model,options) {
-
+    
+   
     if(typeof model.url === 'String' && model.url.match(/http/)!==null){
             options.dataType = 'jsonp';
     }
     var self = this;
+
     self.get(model.store.key,function(data){
-        var success = options.success
+        
         //tried to get the data, but it came back null. if we are using a server, we need to get the data from there. otherwise we will create an empty key
         if(!data){
             if(model.store.server){     
                  
                 options.success = function(resp, status, xhr){
-                      success(resp, status, xhr);
+                      if(_.isFunction(model.parse)) model.parse(resp, xhr)
                       var ids = [];
                       if(_.isArray(resp)) resp = resp[0];
                       _.each(resp,function(row){
@@ -226,6 +226,7 @@ _.extend(Backbone.Store, {
                       });
                       
                       self.saveModelsAndCollections(model); 
+                      model.trigger('complete',model)
                 }
                 
                 return Backbone.RESTfulsync('read', model, options);  //this does the original ajax call as if there was no local storage
@@ -234,6 +235,7 @@ _.extend(Backbone.Store, {
             else{
                 //not using a server, make sure collection exists.
                 self.saveModelsAndCollections(model); 
+                model.trigger('complete',model)
             }
         }
         else{
@@ -253,7 +255,7 @@ _.extend(Backbone.Store, {
                               if(data) model.add(data)
                           })
                 });
-                
+                 model.trigger('complete',model)
             }
         }
      });
@@ -340,6 +342,16 @@ Backbone.sync = function(method, model, options, error) {
   if(model.store) {     
     var chair = Backbone.Store;
     
+    //allow key to be a function
+    if(_.isFunction(model.store.key)){
+        model.store.keyFunction = model.store.key;
+    }
+    if(_.isFunction(model.store.keyFunction)){
+        model.store.key = model.store.keyFunction.call(model)
+    }
+    
+    if(_.isFunction(model.url)) console.log(model.url(),model.store.key)
+    
       switch (method) {
         case "read":    resp = model.id ? chair.find(method,model, options) : chair.findAll(model,options); break;
         case "create":  resp = chair.create(method,model,options);                            break;
@@ -353,11 +365,15 @@ Backbone.sync = function(method, model, options, error) {
   }
 
 
-
+  try{
   if (resp) {
     options.success(resp);
   } else {
     options.error("Record not found");
+  }
+  }
+  catch(err){
+    
   }
 };
 

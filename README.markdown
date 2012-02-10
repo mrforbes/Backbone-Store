@@ -52,3 +52,8 @@ V 0.2:
 * Fixed bug to allow use of collection parsing
 * Changed model property name to 'store' instead of 'lawnchair' for naming consistency
 * Added non-model based peristent state
+
+V 0.3:
+
+* Added 'complete' event for collection updates.. due to the way backbone.store was implemented, it fires an 'add' event for each model put in the collection,instead of one 'add' for the entire collection.  The 'complete' event will allow you to act on only the full collection. 
+* Added ability to set store.key as a function for dynamic keys - this can be useful for things like paging, where you can use the url/hash to store 'pages' of data.
