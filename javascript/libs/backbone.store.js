@@ -1,6 +1,14 @@
 /*
  * Backbone.Store
+ * @version: 0.3
+ * @author: Michael Forbes
+ * @description: based on backbone.localstorage, this one uses Lawnchair.js to provide the JSON storage adapter, allowing it to be used with
+ * a larger range of browsers / devices including IE<8, mobile, and browsers that support indexDB 
+ * @license: do whatever you want with it, but please keep the above attached.
+ * TODO: make this not dependent on AMD loader (require in this case)
  */
+
+
 define('backbonestore',['underscore','backbone','libs/lawnchair'],function(_,Backbone,Lawnchair){
     
 
@@ -25,11 +33,11 @@ function checkExpired(lawnchair, timestamp){
 }
 
 
-Backbone.Store = Lawnchair(function(){});   
+Backbone.Store = Lawnchair(function(){});  //create a lawnchair instance as Backbone.Store 
    
 _.extend(Backbone.Store, {
 // save the model to lawnchair
-  saveModel: function(settings,model, fromCollection){
+  saveModel: function(settings,model,fromCollection){
     
      var json = model.toJSON();
      if(json[model.idAttribute]){
@@ -68,10 +76,10 @@ _.extend(Backbone.Store, {
      if(model.store.server){
          options.success = function(resp){
             
-            if(resp[0][model.idAttribute]){
+            if(resp[model.idAttribute]){
                 // set the model id her
                 
-                model.id = resp[0][model.idAttribute];
+                model.id = resp[model.idAttribute];
                 var modelatt = {};
                 modelatt[model.idAttribute] = model.id;
                 model.set(modelatt);
@@ -168,7 +176,7 @@ _.extend(Backbone.Store, {
                 
             });
         
-       // console.log(thisData, data)
+      
         if(loadFromServer){
             if(options.success) success = options.success;
                    options.success = function(data){
@@ -206,6 +214,7 @@ _.extend(Backbone.Store, {
   findAll: function(model,options) {
     
    
+   //make jsonp if external url
     if(typeof model.url === 'String' && model.url.match(/http/)!==null){
             options.dataType = 'jsonp';
     }
@@ -229,7 +238,8 @@ _.extend(Backbone.Store, {
                       model.trigger('complete',model)
                 }
                 
-                return Backbone.RESTfulsync('read', model, options);  //this does the original ajax call as if there was no local storage
+                return Backbone.RESTfulsync('read', model, options);  
+                //this does the original ajax call as if there was no local storage
                         
             }
             else{
@@ -346,11 +356,12 @@ Backbone.sync = function(method, model, options, error) {
     if(_.isFunction(model.store.key)){
         model.store.keyFunction = model.store.key;
     }
+    
+    //there are a lot of ways to do this... store keyfunction separately so it can re-overwrite key each time it is called.
     if(_.isFunction(model.store.keyFunction)){
         model.store.key = model.store.keyFunction.call(model)
     }
     
-    if(_.isFunction(model.url)) console.log(model.url(),model.store.key)
     
       switch (method) {
         case "read":    resp = model.id ? chair.find(method,model, options) : chair.findAll(model,options); break;
